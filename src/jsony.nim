@@ -23,9 +23,39 @@ proc parseHook*(s: string, i: var int, v: var JsonNode)
 proc parseHook*(s: string, i: var int, v: var char)
 proc parseHook*[T: distinct](s: string, i: var int, v: var T)
 
+# Finds the char n times and stop at that index.
+# If unable to find the nth one, return the previous found index.
+proc rfindn(s: string, sub: char, n: Natural = 1, first_found: var int, start: Natural = 0, last = -1): int {.
+    extern: "nsuRFindCharN".} =
+  ## Searches for `sub` in `s` inside range `start..last` (both ends included)
+  ## in reverse -- starting at high indexes and moving lower to the first
+  ## character or `start`.  If `last` is unspecified, it defaults to `s.high`
+  ## (the last element).
+  ##
+  ## Searching is case-sensitive. If `sub` is not in `s`, -1 is returned.
+  ## Otherwise the index returned is relative to `s[0]`, not `start`.
+  ## Use `s[start..last].find` for a `start`-origin index.
+  ##
+  ## See also:
+  ## * `find func<#find,string,char,Natural,int>`_
+  var found = -1
+  var count = 0
+  let last = if last == -1: s.high else: last
+  for i in countdown(last, start):
+    if sub == s[i]:
+      if found == -1: first_found = i
+      found = i
+      inc(count)
+      if count == n: break
+  return found
+
 template error(msg: string, i: int) =
+  var first_found_idx = 0
   ## Shortcut to raise an exception.
-  raise newException(JsonError, msg & " At offset: " & $i)
+  raise newException(JsonError, msg & " At offset: " & $i & "\n" &
+    # prints the line (and max 4 lines above it) where the parser stopped
+    s[max(0, max(i-250, 1+rfindn(s, '\n', 5, first_found_idx, max(0, i-250), i)))..min(i + 5, s.len - 1)] &
+    '-'.repeat(i - first_found_idx - 1) & "^\n")
 
 template eatSpace*(s: string, i: var int) =
   ## Will consume whitespace.
