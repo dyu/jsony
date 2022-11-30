@@ -25,7 +25,7 @@ proc parseHook*[T: distinct](s: string, i: var int, v: var T)
 
 # Finds the char n times and stop at that index.
 # If unable to find the nth one, return the previous found index.
-func rfindn(s: string, sub: char, n: Natural = 1, first_found: var int, start: Natural = 0, last = -1): int =
+func rfindn(s: string, sub: char, n: Natural = 1, first_found_idx: var int, start: Natural = 0, last = -1, diff = 0): int =
   ## Searches for `sub` in `s` inside range `start..last` (both ends included)
   ## in reverse -- starting at high indexes and moving lower to the first
   ## character or `start`.  If `last` is unspecified, it defaults to `s.high`
@@ -37,16 +37,16 @@ func rfindn(s: string, sub: char, n: Natural = 1, first_found: var int, start: N
   ##
   ## See also:
   ## * `find func<#find,string,char,Natural,int>`_
-  var found = -1
+  var found_idx = -1
   var count = 0
   let last = if last == -1: s.high else: last
   for i in countdown(last, start):
     if sub == s[i]:
-      if found == -1: first_found = i
-      found = i
+      if found_idx == -1: first_found_idx = i + diff
+      found_idx = i
       inc(count)
       if count == n: break
-  return found
+  return found_idx + diff
 
 func findOrLast(s: string, sub: char, start: int, last: int, diff = 0): int =
   let l = min(s.len - 1, last)
@@ -54,13 +54,32 @@ func findOrLast(s: string, sub: char, start: int, last: int, diff = 0): int =
   if result == -1: result = l
   else: inc(result, diff)
 
+func resolveTrailingMsgIndices(s: string, err_idx: var int, start_idx: var int, last_idx: var int, first_found_idx: var int): bool =
+  let len = s.len
+  if len == 0: return false
+  var i: int = err_idx
+  if i == len:
+    dec(i)
+    err_idx = i
+    last_idx = i
+  else:
+    last_idx = findOrLast(s, '\n', i, i + 16, -1)
+  start_idx = max(0, max(i - 250, rfindn(s, '\n', 5, first_found_idx, max(0, i - 250), i, 1)))
+  return true
+
 template error(msg: string, i: int) =
+  # prints the line (and max 4 lines above it) where the parser stopped
+  var err_idx = i
+  var start_idx = 0
+  var last_idx = 0
   var first_found_idx = 0
+  let err_msg = if not resolveTrailingMsgIndices(s, err_idx, start_idx, last_idx, first_found_idx):
+    msg & " At offset: " & $err_idx & '\n'
+  else:
+    msg & " At offset: " & $err_idx & '\n' & s[start_idx..last_idx] & '\n' &
+      '-'.repeat(err_idx - max(first_found_idx, start_idx)) & "^\n"
   ## Shortcut to raise an exception.
-  raise newException(JsonError, msg & " At offset: " & $i & "\n" &
-    # prints the line (and max 4 lines above it) where the parser stopped
-    s[max(0, max(i - 250, 1 + rfindn(s, '\n', 5, first_found_idx, max(0, i - 250), i)))..findOrLast(s, '\n', i, i + 16, -1)] &
-    "\n" & '-'.repeat(i - first_found_idx - 1) & "^\n")
+  raise newException(JsonError, err_msg)
 
 template eatSpace*(s: string, i: var int) =
   ## Will consume whitespace.
