@@ -133,6 +133,9 @@ proc parseHook*(s: string, i: var int, v: var bool) =
     elif i + 4 < s.len and s[i+0] == 'f' and s[i+1] == 'a' and s[i+2] == 'l' and s[i+3] == 's' and s[i+4] == 'e':
       i += 5
       v = false
+    elif i + 3 < s.len and s[i+0] == 'n' and s[i+1] == 'u' and s[i+2] == 'l' and s[i+3] == 'l':
+      i += 4
+      return
     else:
       error("Boolean true or false expected.", i)
 
@@ -142,6 +145,9 @@ proc parseHook*(s: string, i: var int, v: var SomeUnsignedInt) =
     v = type(v)(parseInt(parseSymbol(s, i)))
   else:
     eatSpace(s, i)
+    if i + 3 < s.len and s[i+0] == 'n' and s[i+1] == 'u' and s[i+2] == 'l' and s[i+3] == 'l':
+      i += 4
+      return
     var
       v2: uint64 = 0
       startI = i
@@ -158,6 +164,9 @@ proc parseHook*(s: string, i: var int, v: var SomeSignedInt) =
     v = type(v)(parseInt(parseSymbol(s, i)))
   else:
     eatSpace(s, i)
+    if i + 3 < s.len and s[i+0] == 'n' and s[i+1] == 'u' and s[i+2] == 'l' and s[i+3] == 'l':
+      i += 4
+      return
     if i < s.len and s[i] == '+':
       inc i
     if i < s.len and s[i] == '-':
@@ -177,6 +186,9 @@ proc parseHook*(s: string, i: var int, v: var SomeFloat) =
   ## Will parse float32 and float64.
   var f: float
   eatSpace(s, i)
+  if i + 3 < s.len and s[i+0] == 'n' and s[i+1] == 'u' and s[i+2] == 'l' and s[i+3] == 'l':
+    i += 4
+    return
   let chars = parseutils.parseFloat(s, f, i)
   if chars == 0:
     error("Failed to parse a float.", i)
@@ -310,6 +322,10 @@ proc parseHook*(s: string, i: var int, v: var char) =
 
 proc parseHook*[T](s: string, i: var int, v: var seq[T]) =
   ## Parse seq.
+  eatSpace(s, i)
+  if i + 3 < s.len and s[i+0] == 'n' and s[i+1] == 'u' and s[i+2] == 'l' and s[i+3] == 'l':
+    i += 4
+    return
   eatChar(s, i, '[')
   while i < s.len:
     eatSpace(s, i)
@@ -327,6 +343,9 @@ proc parseHook*[T](s: string, i: var int, v: var seq[T]) =
 
 proc parseHook*[T: array](s: string, i: var int, v: var T) =
   eatSpace(s, i)
+  if i + 3 < s.len and s[i+0] == 'n' and s[i+1] == 'u' and s[i+2] == 'l' and s[i+3] == 'l':
+    i += 4
+    return
   eatChar(s, i, '[')
   for value in v.mitems:
     eatSpace(s, i)
@@ -423,6 +442,9 @@ proc parseObjectInner[T](s: string, i: var int, v: var T) =
 
 proc parseHook*[T: tuple](s: string, i: var int, v: var T) =
   eatSpace(s, i)
+  if i + 3 < s.len and s[i+0] == 'n' and s[i+1] == 'u' and s[i+2] == 'l' and s[i+3] == 'l':
+    i += 4
+    return
   when T.isNamedTuple():
     if i < s.len and s[i] == '{':
       eatChar(s, i, '{')
@@ -440,6 +462,9 @@ proc parseHook*[T: tuple](s: string, i: var int, v: var T) =
 
 proc parseHook*[T: enum](s: string, i: var int, v: var T) =
   eatSpace(s, i)
+  if i + 3 < s.len and s[i+0] == 'n' and s[i+1] == 'u' and s[i+2] == 'l' and s[i+3] == 'l':
+    i += 4
+    return
   var strV: string
   if i < s.len and s[i] == '"':
     parseHook(s, i, strV)
@@ -513,6 +538,10 @@ proc parseHook*[T](s: string, i: var int, v: var SomeTable[string, T]) =
   ## Parse an object.
   when compiles(new(v)):
     new(v)
+  eatSpace(s, i)
+  if i + 3 < s.len and s[i+0] == 'n' and s[i+1] == 'u' and s[i+2] == 'l' and s[i+3] == 'l':
+    i += 4
+    return
   eatChar(s, i, '{')
   while i < s.len:
     eatSpace(s, i)
@@ -533,6 +562,9 @@ proc parseHook*[T](s: string, i: var int, v: var SomeTable[string, T]) =
 proc parseHook*[T](s: string, i: var int, v: var (SomeSet[T]|set[T])) =
   ## Parses `HashSet`, `OrderedSet`, or a built-in `set` type.
   eatSpace(s, i)
+  if i + 3 < s.len and s[i+0] == 'n' and s[i+1] == 'u' and s[i+2] == 'l' and s[i+3] == 'l':
+    i += 4
+    return
   eatChar(s, i, '[')
   while true:
     eatSpace(s, i)
