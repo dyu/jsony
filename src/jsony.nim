@@ -74,9 +74,9 @@ template error(msg: string, i: int) =
   var last_idx = 0
   var first_found_idx = 0
   let err_msg = if not resolveTrailingMsgIndices(s, err_idx, start_idx, last_idx, first_found_idx):
-    msg & " At offset: " & $err_idx & '\n'
+    msg & " at offset: " & $err_idx & '\n'
   else:
-    msg & " At offset: " & $err_idx & '\n' & s[start_idx..last_idx] & '\n' &
+    msg & " at offset: " & $err_idx & '\n' & s[start_idx..last_idx] & '\n' &
       '-'.repeat(err_idx - max(first_found_idx, start_idx)) & "^\n"
   ## Shortcut to raise an exception.
   raise newException(JsonError, err_msg)
