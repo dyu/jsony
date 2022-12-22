@@ -179,8 +179,8 @@ proc parseHook*(s: string, i: var int, v: var SomeSignedInt) =
       parseHook(s, i, v2)
       try:
         v = type(v)(v2)
-      except:
-        error("Number type to small to contain the number.", i)
+      except CatchableError:
+        error("Number type too small to contain the number.", i)
 
 proc parseHook*(s: string, i: var int, v: var SomeFloat) =
   ## Will parse float32 and float64.
